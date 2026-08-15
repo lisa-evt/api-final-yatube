@@ -14,11 +14,12 @@ Yatube API — это REST API для платформы блогов Yatube. П
 - **Пагинация** списка публикаций (`limit`/`offset`).
 ## Технологии
  
-- Python 3.9
-- Django 3.2
+- Python 3.12.7
+- Django 5.1
 - Django REST Framework
 - Djoser + Simple JWT
-- PostgreSQL (или SQLite для локальной разработки)
+- SQLite
+
 ## Установка
  
 1. Клонировать репозиторий и перейти в него в командной строке:
