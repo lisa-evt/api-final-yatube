@@ -1,22 +1,23 @@
-"""API views and viewsets for managing blog posts, groups, and comments.
+"""API viewsets for managing blog posts, groups, comments, and follows.
 
 This module provides the DRF endpoints for:
 - Full CRUD management of posts with author-level access control.
 - Read-only browsing of community groups.
 - Nested comment listing, creation, and detail views linked to parent posts.
+- Managing user subscriptions (follows) with search capabilities.
 """
 
 from django.db.models import QuerySet
+from posts.models import Comment, Follow, Group, Post
 from rest_framework import filters, permissions, viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.serializers import BaseSerializer
 
-from posts.models import Comment, Follow, Group, Post
-
 from .permissions import IsAuthorOrReadOnly
-from .serializers import CommentSerializer, GroupSerializer, PostSerializer
+from .serializers import (CommentSerializer, FollowSerializer, GroupSerializer,
+                          PostSerializer)
 
 
 class PostRelatedMixin:
@@ -84,7 +85,15 @@ class CommentViewSet(PostRelatedMixin, viewsets.ModelViewSet):
 
 
 class FollowViewSet(CreateModelMixin, ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = (permissions.IsAuthenticated)
+    """ViewSet for listing and creating user subscriptions (follows).
+
+    Restricts visibility so users can only see the authors they follow.
+    Automatically assigns the authenticated request user as the follower
+    upon creation. Supports searching by the followed user's username.
+    """
+
+    serializer_class = FollowSerializer
+    permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('following__username',)
 

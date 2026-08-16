@@ -1,4 +1,4 @@
-"""Serializers for converting Post, Group, and Comment models into JSON.
+"""Serializers for converting models into JSON.
 
 This module handles validation and data transformation for the API:
 - PostSerializer: Handles posts, author representation,
@@ -6,12 +6,13 @@ This module handles validation and data transformation for the API:
 - GroupSerializer: Handles group details.
 - CommentSerializer: Handles nested post comments
     and read-only author mappings.
+- FollowSerializer: Handles user subscriptions with validation
+    to prevent self-follows and duplicate subscriptions.
 """
 
 from django.contrib.auth import get_user_model
-from rest_framework import serializers
-
 from posts.models import Comment, Follow, Group, Post
+from rest_framework import serializers
 
 User = get_user_model()
 
@@ -55,6 +56,13 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
+    """Serializer for the Follow model.
+
+    Represents follower and followed relationships using usernames.
+    Validates that users cannot follow themselves or duplicate an existing
+    follow.
+    """
+
     user = serializers.SlugRelatedField(
         slug_field='username', read_only=True
     )
@@ -63,10 +71,19 @@ class FollowSerializer(serializers.ModelSerializer):
     )
 
     def validate(self, attrs):
-        if self.context['request'].user == attrs.get('following'):
+        user = self.context['request'].user
+        following = attrs.get('following')
+
+        if user == following:
             raise serializers.ValidationError(
                 'Нельзя подписаться на самого себя'
             )
+
+        if Follow.objects.filter(user=user, following=following).exists():
+            raise serializers.ValidationError(
+                'Вы уже подписаны на этого пользователя'
+            )
+
         return attrs
 
     class Meta:
