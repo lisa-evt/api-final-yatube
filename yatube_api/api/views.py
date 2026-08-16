@@ -8,13 +8,13 @@ This module provides the DRF endpoints for:
 """
 
 from django.db.models import QuerySet
-from posts.models import Comment, Follow, Group, Post
 from rest_framework import filters, permissions, viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.serializers import BaseSerializer
 
+from posts.models import Comment, Group, Post
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (CommentSerializer, FollowSerializer, GroupSerializer,
                           PostSerializer)
@@ -98,7 +98,7 @@ class FollowViewSet(CreateModelMixin, ListModelMixin, viewsets.GenericViewSet):
     search_fields = ('following__username',)
 
     def get_queryset(self):
-        return Follow.objects.filter(user=self.request.user)
+        return self.request.user.follows.all()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
